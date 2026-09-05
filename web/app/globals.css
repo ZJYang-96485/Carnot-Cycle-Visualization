@@ -252,9 +252,10 @@ h2 {
 
 .input-label {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 2px 8px;
   margin-bottom: 4px;
   color: var(--text);
   font-size: 0.76rem;
@@ -262,14 +263,15 @@ h2 {
 }
 
 .input-label small {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 100%;
+  margin-left: auto;
+  white-space: normal;
   color: var(--quiet);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   font-weight: 600;
+  line-height: 1.25;
+  text-align: right;
 }
 
 /* The input always owns the flexible column. This prevents the narrow sliver
@@ -605,56 +607,6 @@ h2 {
   stroke: var(--stage-adiabatic);
   stroke-width: 2;
   stroke-linecap: round;
-}
-
-.engine-rod,
-.engine-crank-arm {
-  stroke: #b7cee2;
-  stroke-linecap: round;
-}
-
-.engine-rod {
-  stroke-width: 7;
-}
-
-.engine-crank-arm {
-  stroke-width: 5;
-}
-
-.engine-crank {
-  fill: #0b1628;
-  stroke: #7897ba;
-  stroke-width: 2;
-}
-
-.engine-pin {
-  fill: #d7e8f8;
-  stroke: #5c789b;
-  stroke-width: 1.5;
-}
-
-.engine-valve {
-  stroke: #93a9c4;
-  stroke-linecap: round;
-  stroke-width: 4;
-  transition: y2 80ms linear;
-}
-
-.engine-valve.is-open {
-  stroke: var(--success);
-}
-
-.engine-flow {
-  fill: none;
-  stroke: var(--success);
-  stroke-width: 2.5;
-  color: var(--success);
-}
-
-.engine-spark {
-  fill: #ffd66e;
-  font-size: 22px;
-  filter: drop-shadow(0 0 4px rgb(255 214 110 / 80%));
 }
 
 .piston-reading text {

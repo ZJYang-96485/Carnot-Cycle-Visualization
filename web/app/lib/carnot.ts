@@ -74,7 +74,7 @@ export const THERMAL_INPUT_FIELDS: readonly ThermalInputField[] = [
     unit: "ratio",
     min: 1.0001,
     step: 0.01,
-    help: "Must be greater than 1.",
+    help: "Defaults to 5/3, the monatomic ideal-gas value. Must be greater than 1.",
   },
   {
     key: "n",
@@ -92,7 +92,7 @@ export const DEFAULT_INPUTS: CarnotInputs = {
   T_cold: 450,
   V1_L: 10,
   iso_ratio: 1.7,
-  gamma: 1.4,
+  gamma: 5 / 3,
   n: 1,
 };
 

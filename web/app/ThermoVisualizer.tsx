@@ -11,23 +11,12 @@ import {
   DEFAULT_INPUTS,
   THERMAL_INPUT_FIELDS,
 } from "./lib/carnot";
-import {
-  buildFourStrokeEngine,
-  DEFAULT_ENGINE_INPUTS,
-  EngineCycle,
-  EngineInputs,
-  EnginePoint,
-  ENGINE_INPUT_FIELDS,
-} from "./lib/fourStroke";
 
 type ThermalDraft = Record<keyof CarnotInputs, string>;
-type EngineDraft = Record<keyof EngineInputs, string>;
-type VisualizerModel = CycleModel | "four-stroke";
 type ChartKind = "pv" | "ts";
-type EngineChartKind = "pv" | "crank";
 
 const MODEL_OPTIONS: Array<{
-  value: VisualizerModel;
+  value: CycleModel;
   label: string;
   description: string;
 }> = [
@@ -41,28 +30,23 @@ const MODEL_OPTIONS: Array<{
     label: "Curzon–Ahlborn finite-time cycle",
     description: "Endoreversible maximum-power model: η = 1 − √(T𝚌 / Tₕ).",
   },
-  {
-    value: "four-stroke",
-    label: "Four-stroke spark-ignition engine",
-    description: "Finite-burn, slider-crank teaching model with intake and exhaust strokes.",
-  },
 ];
 
 function draftFromThermal(inputs: CarnotInputs): ThermalDraft {
   return Object.fromEntries(
-    THERMAL_INPUT_FIELDS.map(({ key }) => [key, String(inputs[key])]),
+    THERMAL_INPUT_FIELDS.map(({ key }) => [
+      key,
+      key === "gamma" && inputs[key] === 5 / 3 ? "5/3" : String(inputs[key]),
+    ]),
   ) as ThermalDraft;
-}
-
-function draftFromEngine(inputs: EngineInputs): EngineDraft {
-  return Object.fromEntries(
-    ENGINE_INPUT_FIELDS.map(({ key }) => [key, String(inputs[key])]),
-  ) as EngineDraft;
 }
 
 function numericDraftValue(value: string, label: string) {
   const trimmed = value.trim();
-  const numeric = Number(trimmed);
+  const fraction = trimmed.match(/^([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*\/\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))$/);
+  const numeric = fraction
+    ? Number(fraction[1]) / Number(fraction[2])
+    : Number(trimmed);
   if (!trimmed || !Number.isFinite(numeric)) {
     throw new Error(`${label} must be a finite numeric value.`);
   }
@@ -175,16 +159,6 @@ function temperatureColor(point: CyclePoint, cycle: CarnotCycle) {
     1,
   );
   return `hsl(${214 - fraction * 190} 84% ${46 + fraction * 8}%)`;
-}
-
-function engineTemperatureColor(point: EnginePoint, cycle: EngineCycle) {
-  const fraction = clamp(
-    (point.temperature - cycle.inputs.T_intake) /
-      (cycle.inputs.T_peak - cycle.inputs.T_intake),
-    0,
-    1,
-  );
-  return `hsl(${213 - fraction * 190} 84% ${45 + fraction * 9}%)`;
 }
 
 function MetricCard({ label, value, detail }: { label: string; value: string; detail: string }) {
@@ -319,107 +293,21 @@ function ThermalCycleChart({ cycle, point, kind }: { cycle: CarnotCycle; point: 
   );
 }
 
-function EngineScene({ cycle, point }: { cycle: EngineCycle; point: EnginePoint }) {
-  const volumeFraction = clamp((point.volume - cycle.metrics.minVolume) / (cycle.metrics.maxVolume - cycle.metrics.minVolume), 0, 1);
-  const pistonY = 86 + volumeFraction * 106;
-  const gasTop = 58;
-  const gasHeight = Math.max(pistonY - gasTop, 8);
-  const gasColor = engineTemperatureColor(point, cycle);
-  const stage = cycle.stages[point.stage];
-  const theta = ((point.crankAngle % 360) * Math.PI) / 180;
-  const crankX = 180 + 25 * Math.sin(theta);
-  const crankY = 245 - 25 * Math.cos(theta);
-  const intakeOpen = point.stage === 0;
-  const exhaustOpen = point.stage === 3;
-  const sparkVisible = point.crankAngle >= cycle.burn.startAngle && point.crankAngle <= Math.min(cycle.burn.startAngle + 15, cycle.burn.endAngle);
-  const particleSeed = Math.round(point.crankAngle * 37 + point.stage * 19);
-  const particleCount = Math.round(30 * clamp(point.gasAmount / Math.max(cycle.metrics.trappedGasAmount, 1e-15), 0.1, 1));
-  return (
-    <article className="visual-card piston-card">
-      <div className="card-heading"><div><p className="eyebrow">Mechanism and gas state</p><h2>Four-stroke cylinder</h2></div><span className={`stage-chip stage-${point.stage}`}>{stage.shortName}</span></div>
-      <svg className="piston-svg" viewBox="0 0 360 300" role="img" aria-label="Animated four-stroke engine">
-        <defs>
-          <linearGradient id="engine-gas-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor={gasColor} stopOpacity="0.75" /><stop offset="100%" stopColor={gasColor} stopOpacity="0.16" /></linearGradient>
-          <marker id="engine-flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" /></marker>
-        </defs>
-        <rect className="piston-housing" x="113" y="46" width="134" height="160" rx="6" />
-        <rect x="121" y={gasTop} width="118" height={gasHeight} rx="2" fill="url(#engine-gas-fill)" />
-        {Array.from({ length: particleCount }, (_, index) => {
-          const seed = (particleSeed + index * 47) % 97;
-          const secondary = (particleSeed * 3 + index * 29) % 89;
-          return <circle key={index} cx={131 + (seed / 97) * 98} cy={gasTop + 8 + (secondary / 89) * Math.max(gasHeight - 16, 1)} r="2.1" fill={gasColor} />;
-        })}
-        <rect className="piston-plate" x="107" y={pistonY - 6} width="146" height="13" rx="3" />
-        <line className="engine-rod" x1="180" y1={pistonY + 7} x2={crankX} y2={crankY} /><circle className="engine-crank" cx="180" cy="245" r="30" /><line className="engine-crank-arm" x1="180" y1="245" x2={crankX} y2={crankY} /><circle className="engine-pin" cx={crankX} cy={crankY} r="5" />
-        <line className={`engine-valve ${intakeOpen ? "is-open" : ""}`} x1="142" y1="40" x2="142" y2={intakeOpen ? 72 : 61} /><line className={`engine-valve ${exhaustOpen ? "is-open" : ""}`} x1="218" y1="40" x2="218" y2={exhaustOpen ? 72 : 61} />
-        <text className="svg-small-label" x="102" y="39" textAnchor="end">intake</text><text className="svg-small-label" x="258" y="39">exhaust</text>
-        {intakeOpen ? <path className="engine-flow" d="M 48 70 C 73 70, 92 70, 116 70" markerEnd="url(#engine-flow-arrow)" /> : null}
-        {exhaustOpen ? <path className="engine-flow" d="M 244 70 C 268 70, 289 70, 313 70" markerEnd="url(#engine-flow-arrow)" /> : null}
-        {sparkVisible ? <text className="engine-spark" x="180" y="52" textAnchor="middle">✦</text> : null}
-        <g className="piston-reading"><text x="22" y="257">θ = {formatValue(point.crankAngle)}°</text><text x="22" y="276">P = {formatValue(point.pressure / 1e5, 2)} bar</text><text x="207" y="257">T = {formatValue(point.temperature)} K</text><text x="207" y="276">V = {formatValue(point.volume * 1e6)} cm³</text></g>
-      </svg>
-      <div className="stage-detail" aria-live="polite"><strong>{stage.name}</strong><p>{stage.description}</p></div>
-    </article>
-  );
-}
-
-function EngineChart({ cycle, point, kind }: { cycle: EngineCycle; point: EnginePoint; kind: EngineChartKind }) {
-  const isPv = kind === "pv";
-  const xValue = (item: EnginePoint) => isPv ? item.volume * 1e6 : item.crankAngle;
-  const yValue = (item: EnginePoint) => item.pressure / 1e5;
-  const xAxis = createScale(cycle.points.map(xValue), 56, 418);
-  const yAxis = createScale(cycle.points.map(yValue), 36, 244, true);
-  const xFor = (item: EnginePoint) => xAxis.position(xValue(item));
-  const yFor = (item: EnginePoint) => yAxis.position(yValue(item));
-  const title = isPv ? "Pressure–volume loop" : "Pressure versus crank angle";
-  return (
-    <article className="visual-card chart-card">
-      <div className="card-heading"><div><p className="eyebrow">Engine map</p><h2>{title}</h2></div><span className="chart-note">{isPv ? "Loop includes pumping work" : "720° = one cycle"}</span></div>
-      <svg className="cycle-chart" viewBox="0 0 440 292" role="img" aria-label={title}>
-        <g>
-          {tickValues(xAxis.minimum, xAxis.maximum).map((value) => { const x = xAxis.position(value); return <g key={`x-${value}`}><line className="chart-gridline" x1={x} x2={x} y1="36" y2="244" /><text className="chart-tick" x={x} y="261" textAnchor="middle">{formatValue(value, 0)}</text></g>; })}
-          {tickValues(yAxis.minimum, yAxis.maximum).map((value) => { const y = yAxis.position(value); return <g key={`y-${value}`}><line className="chart-gridline" x1="56" x2="418" y1={y} y2={y} /><text className="chart-tick" x="47" y={y + 4} textAnchor="end">{formatValue(value, 1)}</text></g>; })}
-          <line className="chart-axis" x1="56" x2="418" y1="244" y2="244" /><line className="chart-axis" x1="56" x2="56" y1="36" y2="244" />
-          <text className="chart-axis-label" x="237" y="284" textAnchor="middle">{isPv ? "Volume (cm³)" : "Crank angle (°)"}</text><text className="chart-axis-label" transform="translate(15 140) rotate(-90)" textAnchor="middle">Pressure (bar)</text>
-        </g>
-        {isPv ? <path className="cycle-area" d={`${pointsToPath(cycle.points, xFor, yFor)} Z`} /> : null}
-        {[0, 1, 2, 3].map((stage) => <path key={stage} className={`cycle-line stage-${stage}`} d={pointsToPath(cycle.points.filter((item) => item.stage === stage), xFor, yFor)} />)}
-        <circle className="active-marker" cx={xFor(point)} cy={yFor(point)} r="6" />
-      </svg>
-    </article>
-  );
-}
-
 function thermalConstraintText(model: CycleModel) {
   const base = "No arbitrary upper caps: Tₕ > T𝚌 > 0, V₁ > 0, V₂/V₁ > 1, γ > 1, and n > 0 are enforced.";
   return model === "curzon-ahlborn" ? `${base} Tₕ and T𝚌 are reservoir temperatures; working-gas temperatures are derived.` : base;
 }
 
 function thermalBound(key: keyof CarnotInputs) {
-  const bounds: Record<keyof CarnotInputs, string> = { T_hot: "Tₕ > T𝚌", T_cold: "0 < T𝚌 < Tₕ", V1_L: "V₁ > 0", iso_ratio: "V₂/V₁ > 1", gamma: "γ > 1", n: "n > 0" };
-  return bounds[key];
-}
-
-function engineBound(key: keyof EngineInputs) {
-  const bounds: Record<keyof EngineInputs, string> = {
-    compression_ratio: "r > 1",
-    T_intake: "Tᵢ > 0",
-    T_peak: "Tₚ > T₂",
-    gamma: "γ > 1",
-    displacement_cc: "Vd > 0",
-    rpm: "N > 0",
-    burn_duration_deg: "20–100°",
-  };
+  const bounds: Record<keyof CarnotInputs, string> = { T_hot: "Tₕ > T𝚌", T_cold: "0 < T𝚌 < Tₕ", V1_L: "V₁ > 0", iso_ratio: "V₂/V₁ > 1", gamma: "γ > 1 · default 5/3", n: "n > 0" };
   return bounds[key];
 }
 
 export default function ThermoVisualizer() {
-  const [model, setModel] = useState<VisualizerModel>("carnot");
+  const [model, setModel] = useState<CycleModel>("carnot");
   const [thermalInputs, setThermalInputs] = useState<CarnotInputs>(DEFAULT_INPUTS);
-  const [engineInputs, setEngineInputs] = useState<EngineInputs>(DEFAULT_ENGINE_INPUTS);
   const [thermalDraft, setThermalDraft] = useState<ThermalDraft>(() => draftFromThermal(DEFAULT_INPUTS));
-  const [engineDraft, setEngineDraft] = useState<EngineDraft>(() => draftFromEngine(DEFAULT_ENGINE_INPUTS));
-  const [cycle, setCycle] = useState<CarnotCycle | EngineCycle>(() => buildThermalCycle("carnot", DEFAULT_INPUTS));
+  const [cycle, setCycle] = useState<CarnotCycle>(() => buildThermalCycle("carnot", DEFAULT_INPUTS));
   const [activeFrame, setActiveFrame] = useState(0);
   const [speed, setSpeed] = useState(1);
   const [isRunning, setIsRunning] = useState(true);
@@ -427,46 +315,50 @@ export default function ThermoVisualizer() {
   const [notice, setNotice] = useState("Live model ready.");
   const [reducedMotion, setReducedMotion] = useState(false);
   const frameRef = useRef(0);
-  const thermalMotion = useMemo(() => cycle.model === "four-stroke" ? null : createThermalMotionProfile(cycle.points), [cycle]);
+  const thermalMotion = useMemo(() => createThermalMotionProfile(cycle.points), [cycle]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updatePreference = () => setReducedMotion(mediaQuery.matches);
+    const updatePreference = () => {
+      setReducedMotion(mediaQuery.matches);
+      if (mediaQuery.matches) {
+        setIsRunning(false);
+        setNotice("Autoplay paused for your reduced-motion preference. Select Play to run it.");
+      }
+    };
     updatePreference();
-    mediaQuery.addEventListener("change", updatePreference);
-    return () => mediaQuery.removeEventListener("change", updatePreference);
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", updatePreference);
+      return () => mediaQuery.removeEventListener("change", updatePreference);
+    }
+    mediaQuery.addListener(updatePreference);
+    return () => mediaQuery.removeListener(updatePreference);
   }, []);
 
   useEffect(() => {
-    if (!isRunning || reducedMotion) return undefined;
-    let animationFrame = 0;
+    if (!isRunning) return undefined;
     let previousTime = performance.now();
-    const animate = (timestamp: number) => {
+    const advancePlayback = () => {
+      const timestamp = performance.now();
       const elapsed = Math.min(timestamp - previousTime, 80);
       previousTime = timestamp;
-      if (cycle.model === "four-stroke") {
-        frameRef.current = (frameRef.current + (elapsed / 12) * speed) % cycle.points.length;
-        setActiveFrame(frameRef.current);
-      } else if (thermalMotion) {
-        frameRef.current = (frameRef.current + (elapsed / 9_000) * speed) % 1;
-        setActiveFrame(frameAtPathPhase(thermalMotion, frameRef.current));
-      }
-      animationFrame = window.requestAnimationFrame(animate);
+      frameRef.current = (frameRef.current + (elapsed / 9_000) * speed) % 1;
+      setActiveFrame(frameAtPathPhase(thermalMotion, frameRef.current));
     };
-    animationFrame = window.requestAnimationFrame(animate);
-    return () => window.cancelAnimationFrame(animationFrame);
-  }, [cycle, isRunning, reducedMotion, speed, thermalMotion]);
+    const playbackTimer = window.setInterval(advancePlayback, 32);
+    return () => window.clearInterval(playbackTimer);
+  }, [cycle, isRunning, speed, thermalMotion]);
 
   const resetPlayback = () => { frameRef.current = 0; setActiveFrame(0); };
 
-  const selectModel = (nextModel: VisualizerModel) => {
+  const selectModel = (nextModel: CycleModel) => {
     try {
-      const nextCycle = nextModel === "four-stroke" ? buildFourStrokeEngine(engineInputs) : buildThermalCycle(nextModel, thermalInputs);
+      const nextCycle = buildThermalCycle(nextModel, thermalInputs);
       setModel(nextModel);
       setCycle(nextCycle);
       resetPlayback();
       setError("");
-      setNotice(nextModel === "four-stroke" ? "Four-stroke engine selected. Animation now follows uniform crank angle." : `${cycleModelLabel(nextModel)} selected. Animation now follows the P–V path.`);
+      setNotice(`${cycleModelLabel(nextModel)} selected. Animation now follows the P–V path.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The selected model could not be initialized.");
     }
@@ -474,17 +366,10 @@ export default function ThermoVisualizer() {
 
   const applyInputs = () => {
     try {
-      if (model === "four-stroke") {
-        const nextInputs = {} as EngineInputs;
-        for (const field of ENGINE_INPUT_FIELDS) nextInputs[field.key] = numericDraftValue(engineDraft[field.key], field.label);
-        setEngineInputs(nextInputs);
-        setCycle(buildFourStrokeEngine(nextInputs));
-      } else {
-        const nextInputs = {} as CarnotInputs;
-        for (const field of THERMAL_INPUT_FIELDS) nextInputs[field.key] = numericDraftValue(thermalDraft[field.key], field.label);
-        setThermalInputs(nextInputs);
-        setCycle(buildThermalCycle(model, nextInputs));
-      }
+      const nextInputs = {} as CarnotInputs;
+      for (const field of THERMAL_INPUT_FIELDS) nextInputs[field.key] = numericDraftValue(thermalDraft[field.key], field.label);
+      setThermalInputs(nextInputs);
+      setCycle(buildThermalCycle(model, nextInputs));
       resetPlayback();
       setError("");
       setNotice("Inputs applied. Animation restarted at the first state.");
@@ -494,69 +379,51 @@ export default function ThermoVisualizer() {
   };
 
   const resetInputs = () => {
-    if (model === "four-stroke") {
-      setEngineInputs(DEFAULT_ENGINE_INPUTS);
-      setEngineDraft(draftFromEngine(DEFAULT_ENGINE_INPUTS));
-      setCycle(buildFourStrokeEngine(DEFAULT_ENGINE_INPUTS));
-    } else {
-      setThermalInputs(DEFAULT_INPUTS);
-      setThermalDraft(draftFromThermal(DEFAULT_INPUTS));
-      setCycle(buildThermalCycle(model, DEFAULT_INPUTS));
-    }
+    setThermalInputs(DEFAULT_INPUTS);
+    setThermalDraft(draftFromThermal(DEFAULT_INPUTS));
+    setCycle(buildThermalCycle(model, DEFAULT_INPUTS));
     resetPlayback();
     setError("");
     setNotice("Safe default values restored.");
   };
 
-  const activeIndex = Math.floor(activeFrame) % cycle.points.length;
-  const thermalCycle = cycle.model === "four-stroke" ? null : cycle;
-  const engineCycle = cycle.model === "four-stroke" ? cycle : null;
-  const thermalPoint = thermalCycle ? interpolatePoint(thermalCycle.points, activeFrame) : null;
-  const enginePoint = engineCycle ? engineCycle.points[activeIndex] : null;
-  const activeStage = thermalCycle && thermalPoint ? thermalCycle.stages[thermalPoint.stage] : engineCycle && enginePoint ? engineCycle.stages[enginePoint.stage] : null;
-  const thermalWorkCheck = thermalCycle ? Math.abs(thermalCycle.metrics.numericWork - thermalCycle.metrics.netWork) / Math.max(Math.abs(thermalCycle.metrics.netWork), 1e-12) : null;
-  const statusLine = thermalCycle
-    ? `Qₕ ${formatValue(thermalCycle.metrics.heatIn)} J · |Q𝚌| ${formatValue(thermalCycle.metrics.heatOut)} J · Wnet ${formatValue(thermalCycle.metrics.netWork)} J · η ${formatValue(thermalCycle.metrics.efficiency * 100, 1)}%`
-    : engineCycle
-      ? `Qrelease ${formatValue(engineCycle.metrics.heatRelease)} J · Wind ${formatValue(engineCycle.metrics.indicatedWork)} J/cycle · Pind ${formatValue(engineCycle.metrics.indicatedPower / 1e3, 2)} kW`
-      : "";
+  const thermalPoint = interpolatePoint(cycle.points, activeFrame);
+  const activeStage = cycle.stages[thermalPoint.stage];
+  const thermalWorkCheck = Math.abs(cycle.metrics.numericWork - cycle.metrics.netWork) / Math.max(Math.abs(cycle.metrics.netWork), 1e-12);
+  const statusLine = `Qₕ ${formatValue(cycle.metrics.heatIn)} J · |Q𝚌| ${formatValue(cycle.metrics.heatOut)} J · Wnet ${formatValue(cycle.metrics.netWork)} J · η ${formatValue(cycle.metrics.efficiency * 100, 1)}%`;
   const modelOption = MODEL_OPTIONS.find((option) => option.value === model) ?? MODEL_OPTIONS[0];
 
   return (
     <main className="thermo-app">
       <header className="app-header">
-        <div><p className="eyebrow">Interactive thermodynamics lab</p><h1>Thermodynamic Engine Visualizer</h1><p className="header-copy">Compare an ideal Carnot engine, a Curzon–Ahlborn finite-time model, and a four-stroke spark-ignition engine in one live visualizer.</p></div>
+        <div><p className="eyebrow">Interactive thermodynamics lab</p><h1>Thermodynamic Engine Visualizer</h1><p className="header-copy">Compare an ideal Carnot engine with a Curzon–Ahlborn finite-time model in one live visualizer.</p></div>
         <div className="model-badge" aria-label="Current model"><span>Model</span><strong>{modelOption.label}</strong></div>
       </header>
       <div className="app-layout">
         <aside className="controls-panel" aria-label="Simulation controls">
-          <form onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); applyInputs(); }}>
+          <form noValidate onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); applyInputs(); }}>
             <div className="section-heading"><div><p className="eyebrow">Simulation</p><h2>Choose a model</h2></div><span className="input-helper">Then tune inputs</span></div>
-            <label className="model-select-label"><span>Cycle model</span><select aria-label="Cycle model" value={model} onChange={(event) => selectModel(event.target.value as VisualizerModel)}>{MODEL_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+            <label className="model-select-label"><span>Cycle model</span><select aria-label="Cycle model" value={model} onChange={(event) => selectModel(event.target.value as CycleModel)}>{MODEL_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
             <p className="model-description">{modelOption.description}</p>
             <div className="section-heading input-heading"><div><p className="eyebrow">Model inputs</p><h2>Set the cycle</h2></div><span className="input-helper">Enter to apply</span></div>
-            <p className="input-guidance">{model === "four-stroke" ? "No arbitrary upper caps. Physical checks are applied on submit; combustion duration is the explicit 20–100° range." : thermalConstraintText(model)}</p>
-            {model === "four-stroke" ? (
-              <div className="input-list">{ENGINE_INPUT_FIELDS.map((field) => <label className="input-card" key={field.key} title={field.help}><span className="input-label"><span>{field.label}</span><small>{engineBound(field.key)}</small></span><span className="input-control-row"><input aria-label={field.label} inputMode="decimal" min={field.min} max={field.max} step={field.step} type="number" value={engineDraft[field.key]} onChange={(event) => { setEngineDraft((current) => ({ ...current, [field.key]: event.target.value })); setError(""); }} /><span className="input-unit">{field.unit}</span></span></label>)}</div>
-            ) : (
-              <div className="input-list">{THERMAL_INPUT_FIELDS.map((field) => <label className="input-card" key={field.key} title={field.help}><span className="input-label"><span>{field.label}</span><small>{thermalBound(field.key)}</small></span><span className="input-control-row"><input aria-label={field.label} inputMode="decimal" min={field.min} step={field.step} type="number" value={thermalDraft[field.key]} onChange={(event) => { setThermalDraft((current) => ({ ...current, [field.key]: event.target.value })); setError(""); }} /><span className="input-unit">{field.unit}</span></span></label>)}</div>
-            )}
+            <p className="input-guidance">{thermalConstraintText(model)}</p>
+            <div className="input-list">{THERMAL_INPUT_FIELDS.map((field) => <label className="input-card" key={field.key} title={field.help}><span className="input-label"><span>{field.label}</span><small>{thermalBound(field.key)}</small></span><span className="input-control-row"><input aria-label={field.label} inputMode="decimal" min={field.min} step="any" type={field.key === "gamma" ? "text" : "number"} value={thermalDraft[field.key]} onChange={(event) => { setThermalDraft((current) => ({ ...current, [field.key]: event.target.value })); setError(""); }} /><span className="input-unit">{field.unit}</span></span></label>)}</div>
             <div className="input-actions"><button className="primary-button" type="submit">Apply inputs</button><button className="secondary-button" type="button" onClick={resetInputs}>Defaults</button></div>
             {error ? <div className="input-alert" role="alert"><strong>Check the model inputs.</strong><span>{error}</span></div> : <p className="input-status" aria-live="polite">{notice}</p>}
           </form>
           <section className="animation-section" aria-labelledby="animation-heading">
             <div className="section-heading compact"><div><p className="eyebrow">Animation</p><h2 id="animation-heading">Playback</h2></div><output htmlFor="speed" className="speed-readout">{speed.toFixed(2)}×</output></div>
             <label className="range-label" htmlFor="speed">Speed</label><input className="speed-range" id="speed" min="0.25" max="4" step="0.25" type="range" value={speed} onChange={(event) => setSpeed(Number(event.target.value))} />
-            <div className="input-actions animation-actions"><button className="secondary-button" type="button" onClick={() => { setIsRunning((current) => !current); setNotice(isRunning ? "Animation paused." : "Animation resumed."); }}>{isRunning ? "Pause" : "Play"}</button><button className="secondary-button" type="button" onClick={() => { resetPlayback(); setNotice("Animation restarted at the first state."); }}>Restart</button></div>
-            {reducedMotion ? <p className="motion-note">Motion is paused for your reduced-motion preference.</p> : null}
+            <div className="input-actions animation-actions"><button className="secondary-button" type="button" onClick={() => { setIsRunning((current) => !current); setNotice(isRunning ? "Animation paused." : "Animation resumed."); }}>{isRunning ? "Pause" : "Play"}</button><button className="secondary-button" type="button" onClick={() => { resetPlayback(); setIsRunning(true); setNotice("Animation restarted at the first state."); }}>Restart</button></div>
+            {reducedMotion ? <p className="motion-note">Reduced motion is enabled. Select Play or Restart to run the animation.</p> : null}
           </section>
-          <section className="scope-section" aria-labelledby="scope-heading"><p className="eyebrow">Model scope</p><h2 id="scope-heading">{model === "carnot" ? "Idealized, reversible cycle" : model === "curzon-ahlborn" ? "Endoreversible maximum-power cycle" : "One-zone educational engine"}</h2><p>{model === "carnot" ? "A quasistatic ideal-gas teaching model. Its P–V trace is paced by curve length; it does not predict elapsed engine time." : model === "curzon-ahlborn" ? "Uses symmetric finite thermal contacts and internally reversible gas paths. It is not a universal real-engine efficiency." : "Uses slider-crank kinematics, finite-duration heat release, pumping, and blowdown; it is not CFD or detailed combustion chemistry."}</p></section>
+          <section className="scope-section" aria-labelledby="scope-heading"><p className="eyebrow">Model scope</p><h2 id="scope-heading">{model === "carnot" ? "Idealized, reversible cycle" : "Endoreversible maximum-power cycle"}</h2><p>{model === "carnot" ? "A quasistatic ideal-gas teaching model. Its P–V trace is paced by curve length; it does not predict elapsed engine time." : "Uses symmetric finite thermal contacts and internally reversible gas paths. It is not a universal real-engine efficiency."}</p></section>
         </aside>
         <section className="workspace" aria-label="Live thermodynamic visualization">
-          {thermalCycle ? <div className="metric-grid"><MetricCard label={thermalCycle.model === "carnot" ? "Carnot efficiency" : "Curzon–Ahlborn efficiency"} value={`${formatValue(thermalCycle.metrics.efficiency * 100, 1)}%`} detail={thermalCycle.model === "carnot" ? "1 − T𝚌 / Tₕ" : "1 − √(T𝚌 / Tₕ)"} /><MetricCard label="Net work by system" value={`${formatValue(-thermalCycle.metrics.netWork)} J`} detail="DeHoff: Wnet < 0" /><MetricCard label={thermalCycle.model === "carnot" ? "Adiabatic volume ratio" : "Working-gas isotherms"} value={thermalCycle.model === "carnot" ? `${formatValue(thermalCycle.metrics.adiabaticRatio, 2)}×` : `${formatValue(thermalCycle.workingTemperatures.hot)} / ${formatValue(thermalCycle.workingTemperatures.cold)} K`} detail={thermalCycle.model === "carnot" ? "derived from T and γ" : "derived from reservoir temperatures"} /></div> : engineCycle ? <div className="metric-grid"><MetricCard label="Indicated efficiency" value={`${formatValue(engineCycle.metrics.indicatedEfficiency * 100, 1)}%`} detail="−Wind / Qrelease" /><MetricCard label="Indicated power" value={`${formatValue(engineCycle.metrics.indicatedPower / 1e3, 2)} kW`} detail={`${formatValue(engineCycle.inputs.rpm)} rpm`} /><MetricCard label="Ideal Otto reference" value={`${formatValue(engineCycle.metrics.idealOttoEfficiency * 100, 1)}%`} detail="loss-free compression benchmark" /></div> : null}
-          {activeStage ? <div className="stage-strip" aria-label="Current process"><span className={`stage-dot stage-${thermalPoint?.stage ?? enginePoint?.stage ?? 0}`} aria-hidden="true" /><strong>{activeStage.name}</strong><span>{thermalCycle ? activeStage.heat : activeStage.flow}</span><span>{activeStage.work}</span></div> : null}
-          <div className="visual-grid">{thermalCycle && thermalPoint ? <><ThermalPistonScene cycle={thermalCycle} point={thermalPoint} /><ThermalCycleChart cycle={thermalCycle} point={thermalPoint} kind="pv" /><ThermalCycleChart cycle={thermalCycle} point={thermalPoint} kind="ts" /></> : engineCycle && enginePoint ? <><EngineScene cycle={engineCycle} point={enginePoint} /><EngineChart cycle={engineCycle} point={enginePoint} kind="pv" /><EngineChart cycle={engineCycle} point={enginePoint} kind="crank" /></> : null}</div>
-          <footer className="model-footer"><span>{statusLine}</span><span>{thermalWorkCheck !== null ? `P–V work check: ${formatValue(thermalWorkCheck * 100, 4)}% error` : engineCycle ? `Otto reference: ${formatValue(engineCycle.metrics.idealOttoEfficiency * 100, 1)}% · Carnot benchmark: ${formatValue(engineCycle.metrics.carnotBenchmarkEfficiency * 100, 1)}%` : ""}</span></footer>
+          <div className="metric-grid"><MetricCard label={cycle.model === "carnot" ? "Carnot efficiency" : "Curzon–Ahlborn efficiency"} value={`${formatValue(cycle.metrics.efficiency * 100, 1)}%`} detail={cycle.model === "carnot" ? "1 − T𝚌 / Tₕ" : "1 − √(T𝚌 / Tₕ)"} /><MetricCard label="Net work by system" value={`${formatValue(-cycle.metrics.netWork)} J`} detail="DeHoff: Wnet < 0" /><MetricCard label={cycle.model === "carnot" ? "Adiabatic volume ratio" : "Working-gas isotherms"} value={cycle.model === "carnot" ? `${formatValue(cycle.metrics.adiabaticRatio, 2)}×` : `${formatValue(cycle.workingTemperatures.hot)} / ${formatValue(cycle.workingTemperatures.cold)} K`} detail={cycle.model === "carnot" ? "derived from T and γ" : "derived from reservoir temperatures"} /></div>
+          <div className="stage-strip" aria-label="Current process"><span className={`stage-dot stage-${thermalPoint.stage}`} aria-hidden="true" /><strong>{activeStage.name}</strong><span>{activeStage.heat}</span><span>{activeStage.work}</span></div>
+          <div className="visual-grid"><ThermalPistonScene cycle={cycle} point={thermalPoint} /><ThermalCycleChart cycle={cycle} point={thermalPoint} kind="pv" /><ThermalCycleChart cycle={cycle} point={thermalPoint} kind="ts" /></div>
+          <footer className="model-footer"><span>{statusLine}</span><span>P–V work check: {formatValue(thermalWorkCheck * 100, 4)}% error</span></footer>
         </section>
       </div>
     </main>

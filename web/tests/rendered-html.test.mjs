@@ -34,22 +34,27 @@ test("server-renders the thermodynamic visualizer shell", async () => {
   assert.match(html, /Reversible Carnot cycle/);
   assert.match(html, /Hot reservoir/);
   assert.match(html, /Curzon–Ahlborn finite-time cycle/);
-  assert.match(html, /Four-stroke spark-ignition engine/);
+  assert.doesNotMatch(html, /four-stroke|spark-ignition|crank angle/i);
   assert.match(html, /Pressure–volume cycle/);
   assert.match(html, /30\.8%/);
   assert.match(html, /882 J/);
-  assert.match(html, /2\.51×/);
+  assert.match(html, /1\.74×/);
+  assert.match(html, /aria-label="Heat-capacity ratio"[^>]*value="5\/3"/);
+  assert.match(html, /<html lang="en"/);
+  assert.match(html, /<form novalidate=""/i);
+  assert.match(html, /aria-label="Cold reservoir"[^>]*step="any"/);
+  assert.doesNotMatch(html, /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/u);
   assert.doesNotMatch(html, /Your site is taking shape|Building your site|Codex/);
 });
 
-test("removes the disposable starter preview", async () => {
-  const [page, layout, packageJson, css, thermalModel, fourStrokeModel] = await Promise.all([
+test("removes the disposable starter preview and four-stroke model", async () => {
+  const [page, layout, packageJson, css, thermalModel, visualizer] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/carnot.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/lib/fourStroke.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/ThermoVisualizer.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /ThermoVisualizer/);
@@ -62,6 +67,5 @@ test("removes the disposable starter preview", async () => {
   assert.match(css, /grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(thermalModel, /buildCurzonAhlbornCycle/);
   assert.match(thermalModel, /Math\.sqrt\(inputs\.T_hot \* inputs\.T_cold\)/);
-  assert.match(fourStrokeModel, /buildFourStrokeEngine/);
-  assert.match(fourStrokeModel, /ENGINE_POINT_COUNT = 721/);
+  assert.doesNotMatch(visualizer, /four-stroke|spark-ignition|crank angle|EngineScene|EngineChart/i);
 });
