@@ -1,0 +1,5 @@
+# Local Python bytecode generated while validating the desktop visualizer.
+__pycache__/
+*.py[cod]
+
+.DS_Store

@@ -50,7 +50,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -59,7 +60,8 @@ button {
 }
 
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
   outline: 3px solid rgb(84 214 255 / 52%);
   outline-offset: 2px;
 }
@@ -164,7 +166,7 @@ h2 {
 .controls-panel > form,
 .animation-section,
 .scope-section {
-  padding: 21px;
+  padding: 15px;
 }
 
 .animation-section,
@@ -177,12 +179,12 @@ h2 {
   align-items: end;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 .section-heading.compact {
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .input-helper,
@@ -193,15 +195,50 @@ h2 {
   text-align: right;
 }
 
+.model-select-label {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.model-select-label select {
+  width: 100%;
+  min-width: 0;
+  height: 35px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--field);
+  color: var(--text);
+  padding: 5px 7px;
+  font-size: 0.79rem;
+}
+
+.model-description,
+.input-guidance {
+  margin: 6px 0 0;
+  color: var(--quiet);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.input-heading {
+  margin-top: 12px;
+}
+
 .input-list {
   display: grid;
-  gap: 9px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .input-card {
   display: block;
   min-width: 0;
-  padding: 10px;
+  padding: 7px;
   border: 1px solid var(--line-soft);
   border-radius: 12px;
   background: rgb(8 20 37 / 70%);
@@ -218,13 +255,17 @@ h2 {
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 7px;
+  margin-bottom: 4px;
   color: var(--text);
-  font-size: 0.84rem;
+  font-size: 0.76rem;
   font-weight: 650;
 }
 
 .input-label small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--quiet);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.76rem;
@@ -237,20 +278,20 @@ h2 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   min-width: 0;
-  gap: 8px;
+  gap: 5px;
 }
 
 .input-control-row input {
   width: 100%;
   min-width: 0;
-  height: 42px;
+  height: 35px;
   border: 1px solid var(--line);
   border-radius: 9px;
   background: var(--field);
   color: var(--text);
-  padding: 8px 10px;
+  padding: 5px 7px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.93rem;
+  font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -260,15 +301,15 @@ h2 {
 
 .input-unit {
   display: grid;
-  min-width: 42px;
+  min-width: 34px;
   place-items: center;
   align-self: stretch;
-  padding: 0 9px;
+  padding: 0 6px;
   border: 1px solid var(--line-soft);
   border-radius: 9px;
   background: #132540;
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   font-weight: 750;
   white-space: nowrap;
 }
@@ -277,15 +318,15 @@ h2 {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.9fr);
   gap: 9px;
-  margin-top: 15px;
+  margin-top: 10px;
 }
 
 .primary-button,
 .secondary-button {
-  min-height: 42px;
+  min-height: 36px;
   border-radius: 10px;
-  padding: 9px 12px;
-  font-size: 0.88rem;
+  padding: 7px 9px;
+  font-size: 0.8rem;
   font-weight: 760;
   transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
 }
@@ -314,7 +355,7 @@ h2 {
 
 .input-status,
 .motion-note {
-  margin: 11px 0 0;
+  margin: 8px 0 0;
   color: var(--success);
   font-size: 0.8rem;
 }
@@ -364,7 +405,7 @@ h2 {
 
 .animation-actions {
   grid-template-columns: 1fr 1fr;
-  margin-top: 15px;
+  margin-top: 10px;
 }
 
 .scope-section h2 {
@@ -560,6 +601,62 @@ h2 {
   color: var(--accent);
 }
 
+.insulation-mark {
+  stroke: var(--stage-adiabatic);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.engine-rod,
+.engine-crank-arm {
+  stroke: #b7cee2;
+  stroke-linecap: round;
+}
+
+.engine-rod {
+  stroke-width: 7;
+}
+
+.engine-crank-arm {
+  stroke-width: 5;
+}
+
+.engine-crank {
+  fill: #0b1628;
+  stroke: #7897ba;
+  stroke-width: 2;
+}
+
+.engine-pin {
+  fill: #d7e8f8;
+  stroke: #5c789b;
+  stroke-width: 1.5;
+}
+
+.engine-valve {
+  stroke: #93a9c4;
+  stroke-linecap: round;
+  stroke-width: 4;
+  transition: y2 80ms linear;
+}
+
+.engine-valve.is-open {
+  stroke: var(--success);
+}
+
+.engine-flow {
+  fill: none;
+  stroke: var(--success);
+  stroke-width: 2.5;
+  color: var(--success);
+}
+
+.engine-spark {
+  fill: #ffd66e;
+  font-size: 22px;
+  filter: drop-shadow(0 0 4px rgb(255 214 110 / 80%));
+}
+
 .piston-reading text {
   fill: #cad8e7;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -707,7 +804,7 @@ h2 {
   .controls-panel > form,
   .animation-section,
   .scope-section {
-    padding: 19px;
+    padding: 15px;
   }
 
   .input-list {

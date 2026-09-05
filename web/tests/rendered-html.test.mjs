@@ -32,7 +32,9 @@ test("server-renders the thermodynamic visualizer shell", async () => {
   assert.match(html, /<title>Thermodynamic Engine Visualizer<\/title>/i);
   assert.match(html, /Thermodynamic Engine Visualizer/);
   assert.match(html, /Reversible Carnot cycle/);
-  assert.match(html, /Hot temperature/);
+  assert.match(html, /Hot reservoir/);
+  assert.match(html, /Curzon–Ahlborn finite-time cycle/);
+  assert.match(html, /Four-stroke spark-ignition engine/);
   assert.match(html, /Pressure–volume cycle/);
   assert.match(html, /30\.8%/);
   assert.match(html, /882 J/);
@@ -41,11 +43,13 @@ test("server-renders the thermodynamic visualizer shell", async () => {
 });
 
 test("removes the disposable starter preview", async () => {
-  const [page, layout, packageJson, css] = await Promise.all([
+  const [page, layout, packageJson, css, thermalModel, fourStrokeModel] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/carnot.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/fourStroke.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /ThermoVisualizer/);
@@ -55,4 +59,9 @@ test("removes the disposable starter preview", async () => {
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(css, /grid-template-columns:\s*minmax\(0, 1fr\) auto/);
   assert.match(css, /\.input-control-row input\s*\{[\s\S]*min-width:\s*0/);
+  assert.match(css, /grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(thermalModel, /buildCurzonAhlbornCycle/);
+  assert.match(thermalModel, /Math\.sqrt\(inputs\.T_hot \* inputs\.T_cold\)/);
+  assert.match(fourStrokeModel, /buildFourStrokeEngine/);
+  assert.match(fourStrokeModel, /ENGINE_POINT_COUNT = 721/);
 });

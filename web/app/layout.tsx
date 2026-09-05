@@ -12,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const baseUrl = new URL(`${protocol}://${host}`);
   const title = "Thermodynamic Engine Visualizer";
   const description =
-    "An interactive Carnot-cycle simulator with responsive controls and live scientific plots.";
+    "Compare Carnot, Curzon–Ahlborn, and four-stroke engine cycles with live piston and thermodynamic maps.";
 
   return {
     title,
@@ -28,10 +28,10 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       images: [
         {
-          url: new URL("/og.png", baseUrl).toString(),
-          width: 1733,
-          height: 907,
-          alt: "Thermodynamic Engine Visualizer with Carnot cycle diagrams",
+          url: new URL("/og-v2.png", baseUrl).toString(),
+          width: 1729,
+          height: 910,
+          alt: "Thermodynamic Engine Visualizer showing piston, P–V, and four-stroke diagrams",
         },
       ],
     },
@@ -39,7 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title,
       description,
-      images: [new URL("/og.png", baseUrl).toString()],
+      images: [new URL("/og-v2.png", baseUrl).toString()],
     },
   };
 }
