@@ -656,7 +656,11 @@ def create_main_figure():
     Figure contains only scientific content.
     All GUI controls live outside the Matplotlib canvas.
     """
-    fig = Figure(figsize=(10.8, 7.5), constrained_layout=True)
+    fig = Figure(
+        figsize=(10.8, 7.5),
+        constrained_layout=True,
+        facecolor="#f8fafc",
+    )
 
     gs = fig.add_gridspec(
         2, 2,
@@ -1375,22 +1379,241 @@ def run_gui():
             f"Import error: {exc}"
         )
 
+    # Keep the controls legible in both ordinary and high-DPI displays.  The
+    # ``clam`` theme is used below because it lets the app own its contrast and
+    # spacing instead of inheriting a mix of platform-specific widget styles.
+    colors = {
+        "app": "#0b1220",
+        "header": "#101a2d",
+        "panel": "#121e33",
+        "panel_raised": "#1b2a43",
+        "field": "#0d1728",
+        "field_focus": "#13243d",
+        "border": "#31415d",
+        "text": "#f1f5f9",
+        "muted": "#a8b6cc",
+        "accent": "#38bdf8",
+        "accent_active": "#0ea5e9",
+        "success": "#5eead4",
+        "danger": "#fda4af",
+        "danger_bg": "#3b1723",
+        "workspace": "#e7edf5",
+        "status": "#f8fafc",
+        "status_text": "#334155",
+    }
+
+    def configure_app_theme(root):
+        """Create a compact, high-contrast ttk theme for the control shell."""
+        style = ttk.Style(root)
+
+        try:
+            if "clam" in style.theme_names():
+                style.theme_use("clam")
+        except tk.TclError:
+            # Widgets still work with the platform default if a theme cannot
+            # be selected (for example in a minimal Tk installation).
+            pass
+
+        root.configure(background=colors["app"])
+
+        style.configure(
+            ".",
+            background=colors["app"],
+            foreground=colors["text"],
+            font=("TkDefaultFont", 11),
+        )
+        style.configure("Root.TFrame", background=colors["app"])
+        style.configure("Topbar.TFrame", background=colors["header"])
+        style.configure("Sidebar.TFrame", background=colors["panel"])
+        style.configure("Visual.TFrame", background=colors["workspace"])
+        style.configure("InputCard.TFrame", background=colors["panel_raised"])
+        style.configure("ScopeCard.TFrame", background=colors["panel_raised"])
+        style.configure("Status.TFrame", background=colors["status"])
+        style.configure("TPanedwindow", background=colors["app"])
+        style.configure("TSeparator", background=colors["border"])
+
+        style.configure(
+            "Title.TLabel",
+            background=colors["header"],
+            foreground=colors["text"],
+            font=("TkDefaultFont", 18, "bold"),
+        )
+        style.configure(
+            "Subtitle.TLabel",
+            background=colors["header"],
+            foreground=colors["muted"],
+            font=("TkDefaultFont", 10),
+        )
+        style.configure(
+            "ModeLabel.TLabel",
+            background=colors["header"],
+            foreground=colors["muted"],
+            font=("TkDefaultFont", 9, "bold"),
+        )
+        style.configure(
+            "Section.TLabel",
+            background=colors["panel"],
+            foreground=colors["accent"],
+            font=("TkDefaultFont", 10, "bold"),
+        )
+        style.configure(
+            "SectionHint.TLabel",
+            background=colors["panel"],
+            foreground=colors["muted"],
+            font=("TkDefaultFont", 9),
+        )
+        style.configure(
+            "SidebarText.TLabel",
+            background=colors["panel"],
+            foreground=colors["text"],
+            font=("TkDefaultFont", 10, "bold"),
+        )
+        style.configure(
+            "SpeedValue.TLabel",
+            background=colors["panel_raised"],
+            foreground=colors["accent"],
+            padding=(7, 3),
+            font=("TkDefaultFont", 10, "bold"),
+        )
+        style.configure(
+            "FieldLabel.TLabel",
+            background=colors["panel_raised"],
+            foreground=colors["text"],
+            font=("TkDefaultFont", 10, "bold"),
+        )
+        style.configure(
+            "Unit.TLabel",
+            background=colors["field"],
+            foreground=colors["muted"],
+            padding=(9, 7),
+            font=("TkDefaultFont", 10, "bold"),
+        )
+        style.configure(
+            "Hint.TLabel",
+            background=colors["panel"],
+            foreground=colors["muted"],
+            font=("TkDefaultFont", 9),
+        )
+        style.configure(
+            "Info.TLabel",
+            background=colors["panel"],
+            foreground=colors["muted"],
+            font=("TkDefaultFont", 10),
+        )
+        style.configure(
+            "Success.TLabel",
+            background=colors["panel"],
+            foreground=colors["success"],
+            font=("TkDefaultFont", 10, "bold"),
+        )
+        style.configure(
+            "Alert.TLabel",
+            background=colors["danger_bg"],
+            foreground=colors["danger"],
+            padding=(10, 8),
+            font=("TkDefaultFont", 10, "bold"),
+        )
+        style.configure(
+            "Scope.TLabel",
+            background=colors["panel_raised"],
+            foreground=colors["muted"],
+            font=("TkDefaultFont", 10),
+        )
+        style.configure(
+            "Status.TLabel",
+            background=colors["status"],
+            foreground=colors["status_text"],
+            font=("TkDefaultFont", 10, "bold"),
+        )
+
+        style.configure(
+            "Input.TEntry",
+            fieldbackground=colors["field"],
+            foreground=colors["text"],
+            bordercolor=colors["border"],
+            lightcolor=colors["border"],
+            darkcolor=colors["border"],
+            padding=(10, 7),
+            font=("TkFixedFont", 11),
+        )
+        style.map(
+            "Input.TEntry",
+            fieldbackground=[("focus", colors["field_focus"])],
+            bordercolor=[("focus", colors["accent"])],
+        )
+        style.configure(
+            "Mode.TCombobox",
+            fieldbackground=colors["field"],
+            background=colors["panel_raised"],
+            foreground=colors["text"],
+            bordercolor=colors["border"],
+            padding=(8, 5),
+            font=("TkDefaultFont", 10, "bold"),
+        )
+        style.map(
+            "Mode.TCombobox",
+            fieldbackground=[("readonly", colors["field"])],
+            foreground=[("readonly", colors["text"])],
+            selectbackground=[("readonly", colors["field"])],
+            selectforeground=[("readonly", colors["text"])],
+        )
+        style.configure(
+            "Primary.TButton",
+            background=colors["accent"],
+            foreground="#082f49",
+            bordercolor=colors["accent"],
+            padding=(12, 8),
+            font=("TkDefaultFont", 10, "bold"),
+        )
+        style.map(
+            "Primary.TButton",
+            background=[("active", colors["accent_active"]),
+                        ("pressed", colors["accent_active"])],
+            foreground=[("disabled", colors["muted"])],
+        )
+        style.configure(
+            "Secondary.TButton",
+            background=colors["panel_raised"],
+            foreground=colors["text"],
+            bordercolor=colors["border"],
+            padding=(12, 8),
+            font=("TkDefaultFont", 10, "bold"),
+        )
+        style.map(
+            "Secondary.TButton",
+            background=[("active", "#243754"), ("pressed", "#243754")],
+        )
+        style.configure(
+            "TScale",
+            background=colors["panel"],
+            troughcolor=colors["border"],
+        )
+        style.configure(
+            "Sidebar.Vertical.TScrollbar",
+            background=colors["panel_raised"],
+            troughcolor=colors["panel"],
+            bordercolor=colors["panel"],
+            arrowcolor=colors["muted"],
+        )
+
     class ScrollableSidebar(ttk.Frame):
-        def __init__(self, parent):
-            super().__init__(parent)
+        def __init__(self, parent, width=320):
+            super().__init__(parent, style="Sidebar.TFrame")
 
             self.canvas = tk.Canvas(
                 self,
+                background=colors["panel"],
                 highlightthickness=0,
                 borderwidth=0,
-                width=290,
+                width=width,
             )
             self.scrollbar = ttk.Scrollbar(
                 self,
                 orient="vertical",
                 command=self.canvas.yview,
+                style="Sidebar.Vertical.TScrollbar",
             )
-            self.inner = ttk.Frame(self.canvas)
+            self.inner = ttk.Frame(self.canvas, style="Sidebar.TFrame")
 
             self.window_id = self.canvas.create_window(
                 (0, 0),
@@ -1479,41 +1702,69 @@ def run_gui():
             self.root.rowconfigure(1, weight=1)
 
             # ---------------- Top bar ----------------
-            topbar = ttk.Frame(root, padding=(12, 8))
+            topbar = ttk.Frame(
+                root,
+                style="Topbar.TFrame",
+                padding=(20, 13),
+            )
             topbar.grid(row=0, column=0, sticky="ew")
             topbar.columnconfigure(0, weight=1)
 
-            self.title_label = ttk.Label(
-                topbar,
-                text="Thermodynamic Engine Visualizer",
-                font=("", 15, "bold"),
-            )
-            self.title_label.grid(row=0, column=0, sticky="w")
+            title_block = ttk.Frame(topbar, style="Topbar.TFrame")
+            title_block.grid(row=0, column=0, sticky="w")
 
-            ttk.Label(topbar, text="Mode:").grid(
-                row=0, column=1, padx=(12, 6)
+            self.title_label = ttk.Label(
+                title_block,
+                text="Thermodynamic Engine Visualizer",
+                style="Title.TLabel",
             )
+            self.title_label.pack(anchor="w")
+
+            ttk.Label(
+                title_block,
+                text="Explore an idealized cycle with live piston and state plots.",
+                style="Subtitle.TLabel",
+            ).pack(anchor="w", pady=(2, 0))
+
+            mode_block = ttk.Frame(topbar, style="Topbar.TFrame")
+            mode_block.grid(row=0, column=1, sticky="e")
+            ttk.Label(
+                mode_block,
+                text="SIMULATION MODE",
+                style="ModeLabel.TLabel",
+            ).pack(anchor="e", pady=(0, 3))
 
             self.mode_var = tk.StringVar(value="Carnot")
             self.mode_combo = ttk.Combobox(
-                topbar,
+                mode_block,
                 textvariable=self.mode_var,
                 state="readonly",
-                width=20,
+                width=18,
+                style="Mode.TCombobox",
                 values=("Carnot", "4-stroke engine"),
             )
-            self.mode_combo.grid(row=0, column=2, sticky="e")
+            self.mode_combo.pack(anchor="e")
             self.mode_combo.bind("<<ComboboxSelected>>", self.on_mode_change)
 
             # ---------------- Main split ----------------
             self.paned = ttk.Panedwindow(root, orient="horizontal")
             self.paned.grid(row=1, column=0, sticky="nsew")
 
-            self.sidebar = ScrollableSidebar(self.paned)
-            self.visual_frame = ttk.Frame(self.paned)
+            # The new stacked input layout works even at 300 px, while this
+            # gives it enough breathing room on regular desktop displays.
+            self.sidebar_width = min(360, max(300, int(win_w * 0.30)))
+            self.sidebar = ScrollableSidebar(
+                self.paned,
+                width=self.sidebar_width,
+            )
+            self.visual_frame = ttk.Frame(
+                self.paned,
+                style="Visual.TFrame",
+            )
 
             self.paned.add(self.sidebar, weight=0)
             self.paned.add(self.visual_frame, weight=1)
+            self.root.after_idle(self.set_initial_sash)
 
             self.visual_frame.rowconfigure(0, weight=1)
             self.visual_frame.columnconfigure(0, weight=1)
@@ -1535,35 +1786,57 @@ def run_gui():
                 row=0,
                 column=0,
                 sticky="nsew",
-                padx=(4, 8),
-                pady=(2, 4),
+                padx=(10, 10),
+                pady=(10, 5),
             )
 
             # Status line is NOT inside the Matplotlib figure.
             self.status_var = tk.StringVar()
-            self.status_label = ttk.Label(
+            status_frame = ttk.Frame(
                 self.visual_frame,
-                textvariable=self.status_var,
-                anchor="center",
-                justify="center",
+                style="Status.TFrame",
+                padding=(12, 7),
             )
-            self.status_label.grid(
+            status_frame.grid(
                 row=1,
                 column=0,
                 sticky="ew",
-                padx=8,
-                pady=(2, 6),
+                padx=10,
+                pady=(0, 10),
             )
+            status_frame.columnconfigure(0, weight=1)
+            self.status_label = ttk.Label(
+                status_frame,
+                textvariable=self.status_var,
+                anchor="center",
+                justify="center",
+                style="Status.TLabel",
+                wraplength=700,
+            )
+            self.status_label.grid(
+                row=0,
+                column=0,
+                sticky="ew",
+            )
+            self.visual_frame.bind("<Configure>", self.on_visual_resize)
 
             # ---------------- Sidebar controls ----------------
             self.control_container = ttk.Frame(
                 self.sidebar.inner,
-                padding=(12, 8),
+                style="Sidebar.TFrame",
+                padding=(16, 14),
             )
             self.control_container.pack(fill="both", expand=True)
 
             self.input_vars = {}
             self.input_entries = {}
+            self.input_labels = {}
+            self.scope_label = None
+            self.sidebar.canvas.bind(
+                "<Configure>",
+                self.on_sidebar_resize,
+                add="+",
+            )
 
             self.build_controls()
 
@@ -1576,63 +1849,124 @@ def run_gui():
         # --------------------------------------------------------
         # Sidebar construction
         # --------------------------------------------------------
+        def set_initial_sash(self):
+            """Start with a usable form width without locking the divider."""
+            try:
+                self.paned.sashpos(0, self.sidebar_width)
+            except tk.TclError:
+                # Older Tk versions may not expose sash positioning; the
+                # canvas requested width still supplies a sensible default.
+                pass
+
+        def on_sidebar_resize(self, event):
+            """Keep long validation and scope copy inside a resized sidebar."""
+            wraplength = max(180, event.width - 34)
+
+            for name in ("message_label", "scope_label"):
+                widget = getattr(self, name, None)
+                try:
+                    if widget is not None and widget.winfo_exists():
+                        widget.configure(wraplength=wraplength)
+                except tk.TclError:
+                    pass
+
+        def on_visual_resize(self, event):
+            self.status_label.configure(wraplength=max(200, event.width - 36))
+
         def clear_control_container(self):
             for child in self.control_container.winfo_children():
                 child.destroy()
 
             self.input_vars = {}
             self.input_entries = {}
+            self.input_labels = {}
+            self.scope_label = None
 
-        def add_section_title(self, text):
-            ttk.Label(
+        def add_section_title(self, text, detail):
+            section = ttk.Frame(
                 self.control_container,
+                style="Sidebar.TFrame",
+            )
+            section.pack(fill="x", pady=(9, 7))
+
+            ttk.Label(
+                section,
                 text=text,
-                font=("", 10, "bold"),
+                style="Section.TLabel",
             ).pack(
                 anchor="w",
-                pady=(10, 6),
+            )
+            ttk.Label(
+                section,
+                text=detail,
+                style="SectionHint.TLabel",
+                wraplength=280,
+                justify="left",
+            ).pack(
+                anchor="w",
+                pady=(2, 0),
             )
 
         def add_input(self, key, label, value, unit=""):
-            row = ttk.Frame(self.control_container)
-            row.pack(fill="x", pady=4)
-
-            row.columnconfigure(1, weight=1)
+            """Add a responsive field without fixed label or unit columns."""
+            card = ttk.Frame(
+                self.control_container,
+                style="InputCard.TFrame",
+                padding=(10, 8),
+            )
+            card.pack(fill="x", pady=3)
+            card.columnconfigure(0, weight=1)
 
             ttk.Label(
-                row,
+                card,
                 text=label,
-                width=19,
-                anchor="w",
-            ).grid(row=0, column=0, sticky="w")
+                style="FieldLabel.TLabel",
+            ).grid(
+                row=0,
+                column=0,
+                columnspan=2,
+                sticky="w",
+            )
 
             var = tk.StringVar(value=str(value))
             entry = ttk.Entry(
-                row,
+                card,
                 textvariable=var,
-                width=11,
+                width=14,
+                style="Input.TEntry",
             )
             entry.grid(
-                row=0,
-                column=1,
+                row=1,
+                column=0,
                 sticky="ew",
-                padx=(5, 6),
+                pady=(5, 0),
             )
+            entry.bind("<Return>", self.apply_from_entry)
 
-            ttk.Label(
-                row,
-                text=unit,
-                width=7,
-                anchor="w",
-            ).grid(row=0, column=2, sticky="w")
+            if unit:
+                ttk.Label(
+                    card,
+                    text=unit,
+                    style="Unit.TLabel",
+                ).grid(
+                    row=1,
+                    column=1,
+                    sticky="e",
+                    padx=(8, 0),
+                    pady=(5, 0),
+                )
 
             self.input_vars[key] = var
             self.input_entries[key] = entry
+            self.input_labels[key] = label
 
         def build_controls(self):
             self.clear_control_container()
 
-            self.add_section_title("MODEL INPUTS")
+            self.add_section_title(
+                "MODEL INPUTS",
+                "Edit values, then apply them to restart the live cycle.",
+            )
 
             if self.mode == "Carnot":
                 d = self.carnot
@@ -1685,7 +2019,10 @@ def run_gui():
                     "deg",
                 )
 
-            action_row = ttk.Frame(self.control_container)
+            action_row = ttk.Frame(
+                self.control_container,
+                style="Sidebar.TFrame",
+            )
             action_row.pack(fill="x", pady=(12, 4))
             action_row.columnconfigure((0, 1), weight=1)
 
@@ -1693,6 +2030,7 @@ def run_gui():
                 action_row,
                 text="Apply inputs",
                 command=self.apply_inputs,
+                style="Primary.TButton",
             ).grid(
                 row=0,
                 column=0,
@@ -1704,6 +2042,7 @@ def run_gui():
                 action_row,
                 text="Defaults",
                 command=self.restore_defaults,
+                style="Secondary.TButton",
             ).grid(
                 row=0,
                 column=1,
@@ -1711,33 +2050,42 @@ def run_gui():
                 padx=(4, 0),
             )
 
-            self.message_var = tk.StringVar(value="")
+            self.message_var = tk.StringVar(
+                value="Tip: press Return in any field to apply your values."
+            )
             self.message_label = ttk.Label(
                 self.control_container,
                 textvariable=self.message_var,
-                wraplength=250,
+                style="Hint.TLabel",
+                wraplength=max(180, self.sidebar.canvas.winfo_width() - 34),
                 justify="left",
             )
             self.message_label.pack(
                 fill="x",
-                pady=(4, 8),
+                pady=(5, 9),
             )
 
             ttk.Separator(
                 self.control_container,
                 orient="horizontal",
-            ).pack(fill="x", pady=8)
+            ).pack(fill="x", pady=10)
 
-            self.add_section_title("ANIMATION")
+            self.add_section_title(
+                "ANIMATION",
+                "Adjust playback without changing the thermodynamic model.",
+            )
 
-            speed_row = ttk.Frame(self.control_container)
+            speed_row = ttk.Frame(
+                self.control_container,
+                style="Sidebar.TFrame",
+            )
             speed_row.pack(fill="x", pady=(4, 8))
             speed_row.columnconfigure(1, weight=1)
 
             ttk.Label(
                 speed_row,
                 text="Speed",
-                width=10,
+                style="SidebarText.TLabel",
             ).grid(row=0, column=0, sticky="w")
 
             self.speed_var = tk.DoubleVar(value=self.speed)
@@ -1759,11 +2107,14 @@ def run_gui():
             self.speed_label = ttk.Label(
                 speed_row,
                 text=f"{self.speed:.2f}×",
-                width=6,
+                style="SpeedValue.TLabel",
             )
             self.speed_label.grid(row=0, column=2, sticky="e")
 
-            anim_buttons = ttk.Frame(self.control_container)
+            anim_buttons = ttk.Frame(
+                self.control_container,
+                style="Sidebar.TFrame",
+            )
             anim_buttons.pack(fill="x", pady=4)
             anim_buttons.columnconfigure((0, 1), weight=1)
 
@@ -1771,6 +2122,7 @@ def run_gui():
                 anim_buttons,
                 text="Pause",
                 command=self.toggle_pause,
+                style="Secondary.TButton",
             )
             self.pause_button.grid(
                 row=0,
@@ -1783,6 +2135,7 @@ def run_gui():
                 anim_buttons,
                 text="Restart cycle",
                 command=self.restart_cycle,
+                style="Secondary.TButton",
             ).grid(
                 row=0,
                 column=1,
@@ -1793,9 +2146,12 @@ def run_gui():
             ttk.Separator(
                 self.control_container,
                 orient="horizontal",
-            ).pack(fill="x", pady=10)
+            ).pack(fill="x", pady=12)
 
-            self.add_section_title("MODEL SCOPE")
+            self.add_section_title(
+                "MODEL SCOPE",
+                "What this educational visualization includes.",
+            )
 
             scope = (
                 "Carnot mode: reversible ideal-gas cycle.\n\n"
@@ -1806,24 +2162,66 @@ def run_gui():
                 "It is not CFD or detailed combustion chemistry."
             )
 
-            ttk.Label(
+            scope_card = ttk.Frame(
                 self.control_container,
+                style="ScopeCard.TFrame",
+                padding=(10, 9),
+            )
+            scope_card.pack(fill="x", pady=(0, 12))
+
+            self.scope_label = ttk.Label(
+                scope_card,
                 text=scope,
-                wraplength=255,
+                style="Scope.TLabel",
+                wraplength=max(180, self.sidebar.canvas.winfo_width() - 54),
                 justify="left",
-            ).pack(fill="x", pady=(0, 12))
+            )
+            self.scope_label.pack(fill="x")
+
+            if self.input_entries:
+                first_entry = next(iter(self.input_entries.values()))
+                self.root.after_idle(first_entry.focus_set)
 
         # --------------------------------------------------------
         # Input / mode actions
         # --------------------------------------------------------
         def parse_inputs(self):
-            try:
-                return {
-                    key: float(var.get())
-                    for key, var in self.input_vars.items()
-                }
-            except ValueError:
-                raise ValueError("All input fields must contain numeric values.")
+            values = {}
+
+            for key, var in self.input_vars.items():
+                try:
+                    value = float(var.get().strip())
+                except ValueError:
+                    self.input_entries[key].focus_set()
+                    self.input_entries[key].selection_range(0, "end")
+                    raise ValueError(
+                        f"{self.input_labels[key]} must be a numeric value."
+                    )
+
+                if not math.isfinite(value):
+                    self.input_entries[key].focus_set()
+                    self.input_entries[key].selection_range(0, "end")
+                    raise ValueError(
+                        f"{self.input_labels[key]} must be a finite number."
+                    )
+
+                values[key] = value
+
+            return values
+
+        def apply_from_entry(self, _event=None):
+            self.apply_inputs()
+            return "break"
+
+        def set_message(self, text, kind="info"):
+            styles = {
+                "hint": "Hint.TLabel",
+                "info": "Info.TLabel",
+                "success": "Success.TLabel",
+                "error": "Alert.TLabel",
+            }
+            self.message_var.set(text)
+            self.message_label.configure(style=styles.get(kind, "Info.TLabel"))
 
         def apply_inputs(self):
             try:
@@ -1835,11 +2233,14 @@ def run_gui():
                     self.engine = build_four_stroke_engine(**values)
 
                 self.frame = 0.0
-                self.message_var.set("Inputs applied.")
                 self.setup_visualization()
+                self.set_message(
+                    "Inputs applied. The animation restarted at state 1.",
+                    "success",
+                )
 
             except ValueError as exc:
-                self.message_var.set(f"Input error: {exc}")
+                self.set_message(f"Input error: {exc}", "error")
 
         def restore_defaults(self):
             if self.mode == "Carnot":
@@ -1848,9 +2249,9 @@ def run_gui():
                 self.engine = build_four_stroke_engine()
 
             self.frame = 0.0
-            self.message_var.set("Defaults restored.")
             self.build_controls()
             self.setup_visualization()
+            self.set_message("Safe default values restored.", "success")
 
         def on_mode_change(self, _event=None):
             self.mode = (
@@ -1862,6 +2263,12 @@ def run_gui():
             self.frame = 0.0
             self.build_controls()
             self.setup_visualization()
+            self.set_message(
+                "Carnot model selected."
+                if self.mode == "Carnot"
+                else "Four-stroke engine model selected.",
+                "info",
+            )
 
         def on_speed_change(self, _value=None):
             self.speed = float(self.speed_var.get())
@@ -1872,10 +2279,15 @@ def run_gui():
             self.pause_button.configure(
                 text="Pause" if self.running else "Play"
             )
+            self.set_message(
+                "Animation resumed." if self.running else "Animation paused.",
+                "info",
+            )
 
         def restart_cycle(self):
             self.frame = 0.0
             self.setup_visualization()
+            self.set_message("Animation restarted at state 1.", "info")
 
         # --------------------------------------------------------
         # Visualization
@@ -1968,20 +2380,7 @@ def run_gui():
             self.root.destroy()
 
     root = tk.Tk()
-
-    # A native theme usually behaves better under OS scaling than
-    # heavily customized widget dimensions.
-    try:
-        style = ttk.Style(root)
-        available = style.theme_names()
-
-        for candidate in ("aqua", "vista", "clam"):
-            if candidate in available:
-                style.theme_use(candidate)
-                break
-    except Exception:
-        pass
-
+    configure_app_theme(root)
     App(root)
     root.mainloop()
 
