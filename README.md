@@ -1,6 +1,5 @@
 # Thermodynamic Cycle Visualizer
 
-> **Math rendering:** This README uses GitHub-supported LaTeX math. Inline equations use `$...$` and display equations use `$$...$$`.
 
 An interactive Python simulator that connects **thermodynamic cycles**, **piston/engine motion**, and **state-space diagrams** in one synchronized visualization.
 
