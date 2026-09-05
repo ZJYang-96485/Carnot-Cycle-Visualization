@@ -31,8 +31,8 @@ The interface synchronizes:
 - gas temperature
 - heat transfer to/from reservoirs
 - current $P$, $V$, $T$, and $S$
-- $P$-$V$ trajectory
-- $T$-$S$ trajectory
+- P-V trajectory
+- T-S trajectory
 - heat input and rejection
 - net cycle work
 - Carnot efficiency
