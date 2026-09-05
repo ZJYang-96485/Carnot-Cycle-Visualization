@@ -147,11 +147,7 @@ $$
 The required volume ratio between the hot and cold isotherms is
 
 $$
-\frac{V_3}{V_2}
-=
-\frac{V_4}{V_1}
-=
-\left(\frac{T_H}{T_C}\right)^{1/(\gamma-1)}.
+\frac{V_3}{V_2} = \frac{V_4}{V_1} = \left(\frac{T_H}{T_C}\right)^{1/(\gamma-1)}
 $$
 
 ### Entropy
@@ -174,24 +170,20 @@ $$
 \Delta S=0.
 $$
 
-This produces the rectangular Carnot cycle in the $T$-$S$ plane.
+This produces the rectangular Carnot cycle in the T-S plane.
 
 ### Carnot Efficiency
 
 The net work output is
 
 $$
-W_{\mathrm{out,net}}=Q_H-|Q_C|,
+W_{\mathrm{out,net}} = Q_H-|Q_C|
 $$
 
 and the thermal efficiency is
 
 $$
-\eta
-=
-\frac{W_{\mathrm{out,net}}}{Q_H}
-=
-1-\frac{T_C}{T_H}.
+\eta = \frac{W_{\mathrm{out,net}}}{Q_H} = 1-\frac{T_C}{T_H}
 $$
 
 The numerical simulator also evaluates
@@ -253,11 +245,7 @@ The four-stroke mode is a **one-zone educational model** rather than a CFD or de
 Piston displacement is calculated from
 
 $$
-x(\theta)
-=
-r(1-\cos\theta)
-+l
--\sqrt{l^2-r^2\sin^2\theta},
+x(\theta) = r(1-\cos\theta) +l -\sqrt{l^2-r^2\sin^2\theta},
 $$
 
 where:
@@ -281,18 +269,7 @@ $$
 Instead of assuming instantaneous heat addition, the model uses a normalized Wiebe-type burn fraction:
 
 $$
-x_b(\theta)
-=
-\frac{
-1-\exp\left[
--a
-\left(
-\frac{\theta-\theta_s}{\Delta\theta}
-\right)^{m+1}
-\right]
-}{
-1-e^{-a}
-}.
+x_b(\theta) = \frac{1-\exp\left[-a\left(\frac{\theta-\theta_s}{\Delta\theta}\right)^{m+1}\right]}{1-e^{-a}}.
 $$
 
 The gas temperature is advanced using the first law during combustion. The total heat release is numerically adjusted so that the simulated maximum gas temperature reaches the user-selected target peak temperature.
@@ -318,26 +295,19 @@ $$
 The indicated thermal efficiency is
 
 $$
-\eta_{\mathrm{ind}}
-=
-\frac{W_{\mathrm{ind}}}{Q_{\mathrm{release}}}.
+\eta_{\mathrm{ind}} = \frac{W_{\mathrm{ind}}}{Q_{\mathrm{release}}}.
 $$
 
 The corresponding ideal air-standard Otto efficiency is displayed for comparison:
 
 $$
-\eta_{\mathrm{Otto}}
-=
-1-\frac{1}{r_c^{\gamma-1}}.
+\eta_{\mathrm{Otto}} = 1-\frac{1}{r_c^{\gamma-1}}.
 $$
 
 For a four-stroke engine, one thermodynamic cycle occurs every two crankshaft revolutions, so the indicated power is
 
 $$
-P_{\mathrm{ind}}
-=
-W_{\mathrm{ind}}
-\frac{\mathrm{RPM}}{120}.
+P_{\mathrm{ind}} = W_{\mathrm{ind}}\frac{\mathrm{RPM}}{120}.
 $$
 
 ---
